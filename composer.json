@@ -1,0 +1,12 @@
+{
+    "name": "imteazahmed/registration",
+    "authors": [
+        {
+            "name": "imteaz1213",
+            "email": "mdimteaz567@gmail.com"
+        }
+    ],
+    "require": {
+        "firebase/php-jwt": "^6.10"
+    }
+}
