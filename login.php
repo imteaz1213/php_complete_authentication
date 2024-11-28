@@ -1,48 +1,55 @@
 <?php
 
-include 'db.php';
-
+include 'db.php'; 
 session_start();
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get form input values
-    $username = $_POST['username'];
-    $password = $_POST['password'];
+    
+    $username = trim($_POST['username']);
+    $password = trim($_POST['password']);
 
-  
     if (empty($username) || empty($password)) {
-        echo "Please fill all fields!";
-    } else {
-        
-        $sql = "SELECT id, username, password FROM users WHERE username = '$username'";
+        echo json_encode(["error" => "Please fill all fields!"]);
+        exit;
+    }
 
-        
-        $result = mysqli_query($conn, $sql);
 
-      
-        if (mysqli_num_rows($result) > 0) {
-            
-            $user = mysqli_fetch_assoc($result);
+    $sql = "SELECT id, username, password FROM users WHERE username = ?";
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-            
-            if ($user['password'] == $password) {
-               
-                $_SESSION['loggedin'] = true;
-                $_SESSION['id'] = $user['id'];
-                $_SESSION['username'] = $user['username'];
+        if ($result->num_rows > 0) {
+            $user = $result->fetch_assoc();
 
-                echo "Login successful!";
+            if (password_verify($password, $user['password'])) {
+                session_regenerate_id(true);
+
+                 $_SESSION['loggedin'] = true;
+                 $_SESSION['id'] = $user['id'];
+                 $_SESSION['username'] = $user['username'];
+
+                echo json_encode([
+                    "success" => true,
+                    "message" => "Login successful!"
+                ]);
             } else {
-               
-                echo "Invalid  password.";
+        
+                echo json_encode(["error" => "Invalid username or password."]);
             }
         } else {
-           
-            echo "Invalid username.";
+        
+            echo json_encode(["error" => "Invalid username or password."]);
         }
+
+        $stmt->close();
+    } else {
+    
+        error_log("Database error: " . $conn->error, 3, 'error_log.log');
+        echo json_encode(["error" => "An error occurred. Please try again later."]);
     }
 }
 
-mysqli_close($conn);
+$conn->close();
 ?>
